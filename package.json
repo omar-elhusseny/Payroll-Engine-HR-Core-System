@@ -1,0 +1,26 @@
+{
+    "name": "payroll-engine-hr-core-system",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/omar-elhusseny/Payroll-Engine-HR-Core-System.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/omar-elhusseny/Payroll-Engine-HR-Core-System/issues"
+    },
+    "homepage": "https://github.com/omar-elhusseny/Payroll-Engine-HR-Core-System#readme",
+    "description": "",
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.7.0",
+        "@prisma/client": "^7.7.0",
+        "express": "^5.2.1",
+        "prisma": "^6.19.3"
+    }
+}
