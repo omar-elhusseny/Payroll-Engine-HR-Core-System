@@ -1,7 +1,9 @@
+// ── Import dependencies ────────────────────────────────────────────────────
 import express from 'express';
 import cors from 'cors';
 
-// import authRoutes from './modules/auth/auth.routes.js';
+// ── Import local files ────────────────────────────────────────────────────
+import authRoutes from './modules/auth/auth.routes.js';
 // import employeeRoutes from './modules/employees/employees.routes.js';
 // import payrollRoutes from './modules/payroll/payroll.routes.js';
 // import attendanceRoutes from './modules/attendance/attendance.routes.js';
@@ -20,7 +22,7 @@ app.get('/health', (req, res) => {
 });
 
 // ── Routes ────────────────────────────────────────────────────
-// app.use('/api/auth',       authRoutes);
+app.use('/api/auth', authRoutes);
 // app.use('/api/employees',  employeeRoutes);
 // app.use('/api/payroll',    payrollRoutes);
 // app.use('/api/attendance', attendanceRoutes);
@@ -28,11 +30,23 @@ app.get('/health', (req, res) => {
 // app.use('/api/companies',  companyRoutes);
 
 // ── Global error handler ─────────────────────────────────────
-// Must have 4 params for Express to treat it as an error handler
 app.use((err, req, res, next) => {
+    // Handle Zod validation errors with clean field-level messages
+    if (err.name === 'ZodError') {
+        return res.status(400).json({
+            success: false,
+            error: 'Validation failed',
+            details: err.errors.map(e => ({
+                field: e.path.join('.'),
+                message: e.message,
+            })),
+        });
+    }
+
     console.error(err.stack);
     const status = err.status || 500;
     res.status(status).json({
+        success: false,
         error: {
             message: err.message || 'Internal server error',
             ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
