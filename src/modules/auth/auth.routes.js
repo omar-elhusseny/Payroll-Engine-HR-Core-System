@@ -6,7 +6,7 @@ const router = Router();
 
 // Public routes — no token required
 router.post('/register', register);
-router.post('/login',    login);
+router.post('/login', login);
 
 // Protected route — token required (authenticate runs first)
 router.get('/me', authenticate, me);
