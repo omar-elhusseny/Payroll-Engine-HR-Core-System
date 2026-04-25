@@ -154,7 +154,7 @@ export async function terminateEmployee({ id, companyId }) {
     await getEmployee({ id, companyId }); // verifies ownership
 
     const terminated = await prisma.employee.update({
-        where: { id },
+        where: { id, companyId },
         data: { status: 'TERMINATED' },
     });
 

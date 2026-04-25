@@ -97,7 +97,8 @@ model Employee {
     departmentId String?
     name         String
     nationalId   String         @unique // Egyptian National ID (14 digits)
-    baseSalary   Decimal        @db.Decimal(12, 2)
+    grossSalary  Decimal        @db.Decimal(12, 2)
+    netSalary    Decimal        @db.Decimal(12, 2)
     jobTitle     String?
     hireDate     DateTime       @db.Date
     status       EmployeeStatus @default(ACTIVE)
