@@ -3,10 +3,10 @@ import jwt from 'jsonwebtoken';
 import prisma from '../../prisma/client.js';
 
 
-export async function registerUser({ employeeID, email, password, role }) {
+export async function registerUser({ employeeId, email, password, role }) {
     // make sure that the employee exists
     const employee = await prisma.employee.findUnique({
-        where: { id: employeeID }
+        where: { id: employeeId }
     })
 
     if (!employee) {
