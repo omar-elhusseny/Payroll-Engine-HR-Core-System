@@ -1,4 +1,4 @@
-import { prisma } from '../../prisma/client.js';
+import prisma from '../../prisma/client.js';
 import { payrollQueue } from '../../queues/payroll.queue.js';
 import { calculateNetSalary, verifyCalculation } from './payroll.engine.js';
 
@@ -26,7 +26,7 @@ export async function triggerPayrollRun({ companyId, month, year, triggeredBy })
 
     await payrollQueue.add(
         `payroll-${run.id}`,
-        { payrollRunId: run.id, companyId },
+        { payrollRunId: run.id, companyId, month, year },
         { jobId: run.id }
     );
 

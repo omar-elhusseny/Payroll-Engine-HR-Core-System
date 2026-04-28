@@ -6,9 +6,9 @@ import cors from 'cors';
 import authRoutes from './modules/auth/auth.routes.js';
 import employeeRoutes from './modules/employees/employees.routes.js';
 import payrollRoutes from './modules/payroll/payroll.routes.js';
-// import attendanceRoutes from './modules/attendance/attendance.routes.js';
-// import advanceRoutes from './modules/advances/advances.routes.js';
-// import companyRoutes from './modules/companies/companies.routes.js';
+import attendanceRoutes from './modules/attendance/attendance.routes.js';
+import advanceRoutes from './modules/advances/advances.routes.js';
+import companyRoutes from './modules/companies/companies.routes.js';
 
 const app = express();
 
@@ -25,9 +25,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/payroll', payrollRoutes);
-// app.use('/api/attendance', attendanceRoutes);
-// app.use('/api/advances',   advanceRoutes);
-// app.use('/api/companies',  companyRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/advances', advanceRoutes);
+app.use('/api/companies', companyRoutes);
 
 // ── Global error handler ─────────────────────────────────────
 app.use((err, req, res, next) => {

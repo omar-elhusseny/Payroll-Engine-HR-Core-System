@@ -98,6 +98,7 @@ model Employee {
     name         String
     nationalId   String         @unique // Egyptian National ID (14 digits)
     grossSalary  Decimal        @db.Decimal(12, 2)
+    netSalary    Decimal        @db.Decimal(12, 2) // grossSalary − insurance − tax
     jobTitle     String?
     hireDate     DateTime       @db.Date
     status       EmployeeStatus @default(ACTIVE)
@@ -111,10 +112,11 @@ model Employee {
     // Self-referential: this employee might manage a department
     managedDepartments Department[] @relation("DepartmentManager")
 
-    // Account, attendance, advances, payslips
+    // Account, attendance, advances, deductions, payslips
     user        User?
     attendances Attendance[]
     advances    Advance[]    @relation("EmployeeAdvances")
+    deductions  Deduction[]
     payslips    Payslip[]
 
     // Advances this employee has approved (as a manager)
@@ -159,12 +161,14 @@ model User {
 // ============================================================
 
 model OfficeLocation {
-    id           String @id @default(cuid())
-    companyId    String
-    name         String // e.g. "Cairo HQ", "Alexandria Branch"
-    latitude     Float
-    longitude    Float
-    fenceRadiusM Int    @default(50) // meters, default 50m
+    id             String @id @default(cuid())
+    companyId      String
+    name           String // e.g. "Cairo HQ", "Alexandria Branch"
+    latitude       Float
+    longitude      Float
+    fenceRadiusM   Int    @default(50) // meters, default 50m
+    shiftStartTime String @default("09:00") // "HH:MM" 24h format
+    shiftEndTime   String @default("17:00") // used to detect early leave
 
     // Relations
     company     Company      @relation(fields: [companyId], references: [id])
@@ -182,15 +186,16 @@ model OfficeLocation {
 // ============================================================
 
 model Attendance {
-    id         String    @id @default(cuid())
-    employeeId String
-    locationId String
-    clockIn    DateTime
-    clockOut   DateTime? // null until employee clocks out
-    latitude   Float // where employee actually was
-    longitude  Float
-    isValid    Boolean   @default(false) // was geo-fence check passed?
-    createdAt  DateTime  @default(now())
+    id          String    @id @default(cuid())
+    employeeId  String
+    locationId  String
+    clockIn     DateTime
+    clockOut    DateTime? // null until employee clocks out
+    latitude    Float // where employee actually was
+    longitude   Float
+    isValid     Boolean   @default(false) // was geo-fence check passed?
+    lateMinutes Int       @default(0) // how many minutes after shiftStartTime
+    createdAt   DateTime  @default(now())
 
     // Relations
     employee Employee       @relation(fields: [employeeId], references: [id])
@@ -234,6 +239,36 @@ model Advance {
 }
 
 // ============================================================
+// DEDUCTIONS
+// Attendance-based deductions calculated before payroll runs.
+// HR reviews and confirms them, then payroll picks them up.
+// Each record covers one employee for one month/year.
+// ============================================================
+
+model Deduction {
+    id             String   @id @default(cuid())
+    employeeId     String
+    month          Int
+    year           Int
+    absentDays     Int      @default(0)
+    lateMinutes    Int      @default(0)
+    absenceAmount  Decimal  @db.Decimal(12, 2) // absentDays × daily rate
+    latenessAmount Decimal  @db.Decimal(12, 2) // lateMinutes × minute rate
+    totalAmount    Decimal  @db.Decimal(12, 2) // absenceAmount + latenessAmount
+    deductedInId   String? // which payroll run consumed this
+    createdAt      DateTime @default(now())
+
+    // Relations
+    employee   Employee    @relation(fields: [employeeId], references: [id])
+    deductedIn PayrollRun? @relation(fields: [deductedInId], references: [id])
+
+    // One deduction record per employee per month
+    @@unique([employeeId, month, year])
+    @@index([employeeId])
+    @@map("deductions")
+}
+
+// ============================================================
 // PAYROLL RUNS
 // One run per company per month.
 // HR triggers it → status becomes PENDING →
@@ -253,10 +288,11 @@ model PayrollRun {
     updatedAt   DateTime         @updatedAt
 
     // Relations
-    company  Company   @relation(fields: [companyId], references: [id])
-    trigger  Employee  @relation(fields: [triggeredBy], references: [id])
-    payslips Payslip[]
-    advances Advance[] // advances deducted in this run
+    company    Company     @relation(fields: [companyId], references: [id])
+    trigger    Employee    @relation(fields: [triggeredBy], references: [id])
+    payslips   Payslip[]
+    advances   Advance[] // advances deducted in this run
+    deductions Deduction[] // attendance deductions consumed in this run
 
     // A company can only have one run per month/year
     @@unique([companyId, month, year])
@@ -278,12 +314,14 @@ model Payslip {
     payrollRunId String
 
     // Salary breakdown (all in EGP)
-    grossSalary       Decimal @db.Decimal(12, 2)
-    taxDeduction      Decimal @db.Decimal(12, 2) // ETA progressive tax
-    insuranceEmployee Decimal @db.Decimal(12, 2) // 11% — employee pays
-    insuranceEmployer Decimal @db.Decimal(12, 2) // 18% — company pays (for forms)
-    advanceDeduction  Decimal @db.Decimal(12, 2) // total salaf deducted this month
-    netSalary         Decimal @db.Decimal(12, 2) // what hits the employee's account
+    grossSalary         Decimal @db.Decimal(12, 2) // what the employee earns
+    taxDeduction        Decimal @db.Decimal(12, 2) // ETA progressive tax
+    insuranceEmployee   Decimal @db.Decimal(12, 2) // 11% — employee pays
+    insuranceEmployer   Decimal @db.Decimal(12, 2) // 18% — company pays (for forms)
+    advanceDeduction    Decimal @db.Decimal(12, 2) // total salaf deducted this month
+    attendanceDeduction Decimal @db.Decimal(12, 2) // absence + lateness deductions
+    otherDeductions     Decimal @db.Decimal(12, 2) // any manual deductions
+    netSalary           Decimal @db.Decimal(12, 2) // what hits the employee's account
 
     // Relations
     employee   Employee   @relation(fields: [employeeId], references: [id])

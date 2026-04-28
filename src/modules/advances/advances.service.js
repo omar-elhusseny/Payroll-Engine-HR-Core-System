@@ -1,4 +1,4 @@
-import { prisma } from '../../prisma/client.js';
+import prisma from '../../prisma/client.js';
 
 // ─────────────────────────────────────────────────────────────
 // requestAdvance
@@ -199,4 +199,4 @@ export async function cancelAdvance({ advanceId, employeeId }) {
     await prisma.advance.delete({ where: { id: advanceId } });
 
     return { message: 'Advance request cancelled' };
-} s
+}
